@@ -17,6 +17,7 @@ Highlights
 ## Table of contents
 
 - [Features](#features)
+- [Categories (optional)](#categories-optional)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -37,6 +38,83 @@ Highlights
 - Writes a per-run metrics file and updates `metrics-latest.json` for dashboards
 - Minimal surface area and easy to extend
 
+## Categories (optional)
+
+pw-metrics supports **custom test categories** to help you break down results in a way that matches your test strategy.
+
+Categories are **fully user-defined**. The tool does not enforce any naming or meaning.  
+You decide what a category represents.
+
+Common examples include:
+
+- `smoke`
+- `regression`
+- `security`
+- `integration`
+- `mobile`
+- `api`
+- `performance`
+
+### How categories work
+
+A category groups tests based on **matching rules**. A test can belong to a category if it matches one or more of the following:
+
+- **Tags** (Playwright annotations)
+- **Project names**
+- **File path patterns**
+
+Categories are evaluated **after** test results are loaded and filtered.
+
+### Multiple vs exclusive categories
+
+You can choose how categories behave:
+
+- **Multi-category mode**  
+  A test may belong to multiple categories at the same time.
+
+- **Exclusive mode**  
+  A test is counted only in the first matching category.
+
+This allows you to model both overlapping concerns (for example `api` + `security`)
+and strict groupings (for example `smoke` _or_ `regression`).
+
+### How categories affect metrics
+
+- Global totals (`all`, `passed`, `failed`, etc.) are **always computed**
+- Categories provide an **additional breakdown**
+- Each category has its own:
+  - total count
+  - passed / failed / skipped / timed out
+  - pass rate
+
+If categories are not configured, pw-metrics behaves exactly the same as without them.
+
+### Where category results appear
+
+When categories are enabled, the output includes an additional section:
+
+````json
+{
+  "categories": {
+    "smoke": {
+      "total": 20,
+      "passed": 19,
+      "failed": 1,
+      "skipped": 0,
+      "timedOut": 0,
+      "passRate": 95
+    },
+    "security": {
+      "total": 10,
+      "passed": 8,
+      "failed": 2,
+      "skipped": 0,
+      "timedOut": 0,
+      "passRate": 80
+    }
+  }
+}
+
 ## Requirements
 
 - Node.js 18+
@@ -48,7 +126,7 @@ Example test run that writes a Playwright JSON report:
 ```bash
 npx playwright test --reporter=json
 # Common locations: test-results/results.json, playwright-report or a CI-provided path
-```
+````
 
 ## Installation
 
