@@ -8,17 +8,17 @@
     "pw-metrics": "dist/generateMetrics.js",
     "pw-metrics-summary": "dist/parseResults.js"
   },
+  "files": [
+    "dist",
+    "site/index.html",
+    "pw-metrics.config.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
-
-    "generate": "node dist/generateMetrics.js",
-    "summary": "node dist/parseResults.js",
-
     "dev:generate": "ts-node src/generateMetrics.ts",
-    "dev:summary": "ts-node src/parseResults.ts",
-
-    "metrics:dev": "node dist/generateMetrics.js --json=test-results/results.json --env=DEV",
-    "metrics:sit": "node dist/generateMetrics.js --json=test-results/results.json --env=SIT"
+    "dev:summary": "ts-node src/parseResults.ts"
   },
 
   "keywords": [
