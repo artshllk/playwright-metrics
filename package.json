@@ -1,7 +1,7 @@
 {
   "name": "@artshllaku/pw-metrics",
   "description": "Generate simple metrics from Playwright JSON reports for CI and dashboards",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "dist/playwrightMetrics.js",
   "types": "dist/playwrightMetrics.d.ts",
