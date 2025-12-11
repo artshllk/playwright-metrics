@@ -1,1 +1,14 @@
-/node_modules/
+# build output (optional)
+dist/
+
+# runtime outputs
+artifacts/
+site/metrics-latest.json
+test-results/
+*.tgz
+
+# dependency dirs
+node_modules/
+
+# editor stuff
+.vscode/
