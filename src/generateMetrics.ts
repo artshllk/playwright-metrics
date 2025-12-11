@@ -61,22 +61,20 @@ function writePrettyJson(filePath: string, payload: unknown): void {
   const jsonPath =
     (args.json as string | undefined) || "test-results/results.json";
 
-  const environmentName = (
-    (args.env as string | undefined) ||
-    process.env.ENV ||
-    "DEV"
-  ).toUpperCase();
+  const env = ((args.env as string) || process.env.ENV || "DEV").toUpperCase();
+
+  const outDir = (args.outDir as string) || "artifacts";
+  const latestFile = (args.latest as string) || "site/metrics-latest.json";
 
   const reportUrl =
-    (args.reportUrl as string | undefined) ||
-    "playwright-report/index.html";
+    (args.reportUrl as string | undefined) || "playwright-report/index.html";
 
   const runIdArgument = args.runId as string | undefined;
 
   // Build summary from results.json
   const summary = buildMetricsSummary({
     jsonPath,
-    environmentName,
+    environmentName: env,
     excludeGlobalSetup: true,
     excludeSkipped: true,
   });
@@ -107,12 +105,12 @@ function writePrettyJson(filePath: string, payload: unknown): void {
 
   // per-run file
   const perRunPath = path.resolve(
-    `artifacts/${environmentName.toLowerCase()}/${runId}/metrics.json`,
+    `${outDir}/${env.toLowerCase()}/${runId}/metrics.json`
   );
   writePrettyJson(perRunPath, payload);
 
   // metrics-latest rollup
-  const latestPath = path.resolve("site/metrics-latest.json");
+  const latestPath = path.resolve(latestFile);
   let latest: Record<string, unknown> = {};
 
   if (fs.existsSync(latestPath)) {
@@ -124,11 +122,8 @@ function writePrettyJson(filePath: string, payload: unknown): void {
     }
   }
 
-  latest[environmentName] = payload;
+  latest[env] = payload;
   writePrettyJson(latestPath, latest);
 
-  console.log(
-    "[metrics] summary:",
-    JSON.stringify(payload, null, 2),
-  );
+  console.log("[metrics] summary:", JSON.stringify(payload, null, 2));
 })();

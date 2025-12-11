@@ -1,22 +1,26 @@
 {
   "name": "@artshllaku/pw-metrics",
   "version": "0.1.0",
-  "private": false,
   "type": "module",
   "main": "dist/playwrightMetrics.js",
+  "types": "dist/playwrightMetrics.d.ts",
   "bin": {
-    "playwright-metrics-generate": "dist/generateMetrics.js",
-    "playwright-metrics-summary": "dist/parseResults.js",
-    "metrics:dev": "node dist/generateMetrics.js --json=test-results/results.json --env=DEV",
-    "metrics:sit": "node dist/generateMetrics.js --json=test-results/results.json --env=SIT"
+    "pw-metrics": "dist/generateMetrics.js",
+    "pw-metrics-summary": "dist/parseResults.js"
   },
   "scripts": {
     "build": "tsc",
+
     "generate": "node dist/generateMetrics.js",
     "summary": "node dist/parseResults.js",
+
     "dev:generate": "ts-node src/generateMetrics.ts",
-    "dev:summary": "ts-node src/parseResults.ts"
+    "dev:summary": "ts-node src/parseResults.ts",
+
+    "metrics:dev": "node dist/generateMetrics.js --json=test-results/results.json --env=DEV",
+    "metrics:sit": "node dist/generateMetrics.js --json=test-results/results.json --env=SIT"
   },
+
   "keywords": [
     "playwright",
     "metrics",
@@ -31,4 +35,3 @@
     "typescript": "^5.6.0"
   }
 }
-

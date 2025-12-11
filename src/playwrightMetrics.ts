@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { buildCategoryMetrics, isInCategory } from "./helpers/helpers.js";
 
 export interface FlattenedTestItem {
   test: any;
@@ -21,25 +22,49 @@ export interface StatusCounts {
 
 export interface MetricsTotals {
   all: number;
-  security: number;
-  functional: number;
   passed: number;
   failed: number;
+  skipped: number;
+  timedOut: number;
 }
 
-export interface MetricsSummary {
-  env: string; // keep "env" here for backward compatibility
-  totals: MetricsTotals;
+export interface CategoryDefinition {
+  name: string;
+  tags?: string[];
+  projectPatterns?: string[];
+  filePatterns?: string[];
+}
+
+export interface CategoryConfig {
+  categories: CategoryDefinition[];
+  categoryMode?: "multi" | "exclusive";
+}
+
+export interface CategoryMetrics {
+  total: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  timedOut: number;
   passRate: number;
 }
 
+// extended metrics summary
+export interface MetricsSummary {
+  env: string;
+  totals: MetricsTotals;
+  passRate: number;
+  categories?: Record<string, CategoryMetrics>;
+}
+
+// SINGLE ParseOptions – no duplicate
 export interface ParseOptions {
   jsonPath: string;
   environmentName: string;
   excludeGlobalSetup?: boolean;
   excludeSkipped?: boolean;
+  categoryConfig?: CategoryConfig;
 }
-
 /**
  * Read JSON file from disk and parse it.
  */
@@ -62,7 +87,7 @@ function normalizeTag(tag: unknown): string {
     .toLowerCase();
 }
 
-function hasTagAnnotation(annotations: any[], tag: string): boolean {
+export function hasTagAnnotation(annotations: any[], tag: string): boolean {
   const expected = normalizeTag(tag);
 
   return annotations.some((annotation) => {
@@ -109,7 +134,10 @@ export function flattenTests(root: any): FlattenedTestItem[] {
     const { node, inheritedAnnotations, titlePath } = stack.pop()!;
 
     for (const suite of node.suites || []) {
-      const suiteAnnotations = [...inheritedAnnotations, ...(suite.annotations || [])];
+      const suiteAnnotations = [
+        ...inheritedAnnotations,
+        ...(suite.annotations || []),
+      ];
       const suiteTitlePath = [...titlePath, suite.title || ""];
       stack.push({
         node: suite,
@@ -119,7 +147,10 @@ export function flattenTests(root: any): FlattenedTestItem[] {
     }
 
     for (const spec of node.specs || []) {
-      const specAnnotations = [...inheritedAnnotations, ...(spec.annotations || [])];
+      const specAnnotations = [
+        ...inheritedAnnotations,
+        ...(spec.annotations || []),
+      ];
       const specTitlePath = [...titlePath, spec.title || ""];
 
       const specFilePath =
@@ -129,7 +160,10 @@ export function flattenTests(root: any): FlattenedTestItem[] {
         "";
 
       for (const test of spec.tests || []) {
-        const testAnnotations = [...specAnnotations, ...(test.annotations || [])];
+        const testAnnotations = [
+          ...specAnnotations,
+          ...(test.annotations || []),
+        ];
         const filePath = test.location?.file || specFilePath || "";
 
         flattened.push({
@@ -184,59 +218,81 @@ export function countStatuses(items: FlattenedTestItem[]): StatusCounts {
  * Build a metrics summary from a Playwright JSON results file.
  */
 export function buildMetricsSummary(options: ParseOptions): MetricsSummary {
-  const { jsonPath, environmentName, excludeGlobalSetup = true, excludeSkipped = true } =
-    options;
+  const {
+    jsonPath,
+    environmentName,
+    excludeGlobalSetup = true,
+    excludeSkipped = true,
+    categoryConfig,
+  } = options;
 
   const data = readJsonFile(jsonPath);
   const suites = data.suites || [];
 
-  // Flatten all tests
   const rawItems = suites.flatMap((suite: any) => flattenTests(suite));
 
-  // Apply filters (global.setup + skipped)
-  const filteredItems = rawItems.filter((item: any) => {
-    if (excludeGlobalSetup && isGlobalSetup(item)) {
-      return false;
-    }
-    if (excludeSkipped && isSkipped(item.test)) {
-      return false;
-    }
+  const filteredItems = rawItems.filter((item: FlattenedTestItem) => {
+    if (excludeGlobalSetup && isGlobalSetup(item)) return false;
+    if (excludeSkipped && isSkipped(item.test)) return false;
     return true;
   });
 
-  // Security vs functional classification
-  const securityItems = filteredItems.filter((item: any) => {
-    return (
-      hasTagAnnotation(item.annotations, "@security") ||
-      /(^|[-_])security($|[-_])/i.test(item.projectName)
-    );
-  });
-
-  const functionalItems = filteredItems.filter((item: any) => {
-    return (
-      hasTagAnnotation(item.annotations, "@functional") ||
-      /(^|[-_])functional($|[-_])/i.test(item.projectName)
-    );
-  });
-
   const statusCounts = countStatuses(filteredItems);
-  const denominator = statusCounts.passed + statusCounts.failed;
-  const passRate =
-    denominator === 0
-      ? 0
-      : Math.round((statusCounts.passed / denominator) * 100);
 
   const totals: MetricsTotals = {
     all: filteredItems.length,
-    security: securityItems.length,
-    functional: functionalItems.length,
     passed: statusCounts.passed,
     failed: statusCounts.failed,
+    skipped: statusCounts.skipped,
+    timedOut: statusCounts.timedOut,
   };
+
+  // global pass rate
+  const globalDenominator = statusCounts.passed + statusCounts.failed;
+  const passRate =
+    globalDenominator === 0
+      ? 0
+      : Math.round((statusCounts.passed / globalDenominator) * 100);
+
+  // categories (optional)
+  const categories = buildCategoryMetrics(filteredItems, categoryConfig);
 
   return {
     env: environmentName.toUpperCase(),
     totals,
     passRate,
+    categories,
+  };
+}
+
+export function buildRunPayload(args: {
+  jsonPath: string;
+  env: string;
+  reportUrl?: string;
+  runId?: string;
+  gitSha?: string | null;
+  branch?: string | null;
+  runNumber?: string | null;
+  categoryConfig?: CategoryConfig;
+}): Record<string, unknown> {
+  const summary = buildMetricsSummary({
+    jsonPath: args.jsonPath,
+    environmentName: args.env,
+    excludeGlobalSetup: true,
+    excludeSkipped: true,
+    categoryConfig: args.categoryConfig,
+  });
+
+  return {
+    env: summary.env,
+    runId: args.runId,
+    gitSha: args.gitSha,
+    branch: args.branch,
+    runNumber: args.runNumber,
+    totals: summary.totals,
+    passRate: summary.passRate,
+    categories: summary.categories,
+    reportUrl: args.reportUrl,
+    timestampISO: new Date().toISOString(),
   };
 }

@@ -7,6 +7,24 @@ interface CliArgs {
 
 function parseCliArguments(args: string[]): CliArgs {
   const result: CliArgs = {};
+
+  function parseList(value: string | undefined): string[] {
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+
+  function parseRegexList(value: string | undefined): RegExp[] {
+    if (!value) return [];
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .map((pattern) => new RegExp(pattern, "i"));
+  }
+
   for (const argument of args) {
     const [rawKey, rawValue] = argument.split("=");
     const key = rawKey.replace(/^--/, "");

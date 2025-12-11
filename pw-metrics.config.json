@@ -1,0 +1,28 @@
+{
+  "categories": [
+    {
+      "name": "security",
+      "tags": ["@security", "@sec"],
+      "projectPatterns": ["security", "auth-sec"],
+      "filePatterns": ["security/", "auth/"]
+    },
+    {
+      "name": "smoke",
+      "tags": ["@smoke"]
+    },
+    {
+      "name": "integration",
+      "tags": ["@integration"]
+    },
+    {
+      "name": "mobile",
+      "projectPatterns": ["mobile"]
+    },
+    {
+      "name": "windows",
+      "projectPatterns": ["windows"]
+    }
+  ],
+
+  "categoryMode": "multi"
+}
