@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Playwright API Metrics Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color-scheme: dark;
+
+        --bg: #020617;
+        --bg-elevated: #020617;
+        --bg-card: #020617;
+        --bg-card-soft: #020617;
+
+        --border-subtle: #1f2937;
+        --border-strong: #4b5563;
+
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.16);
+        --accent-strong: rgba(56, 189, 248, 0.45);
+
+        --success: #22c55e;
+        --danger: #f97373;
+        --warning: #eab308;
+
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --text-soft: #6b7280;
+
+        --shadow-soft: 0 20px 50px rgba(15, 23, 42, 0.85);
+        --radius-lg: 18px;
+        --radius-pill: 999px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top, rgba(56, 189, 248, 0.25), transparent 55%),
+          radial-gradient(circle at bottom, #020617 0, #000 65%);
+        color: var(--text-main);
+      }
+
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .title-block h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+        letter-spacing: 0.04em;
+      }
+
+      .title-block p {
+        margin: 4px 0 0;
+        font-size: 0.9rem;
+        color: var(--text-soft);
+      }
+
+      .summary-pill {
+        background:
+          linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.75));
+        border-radius: var(--radius-pill);
+        padding: 8px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(55, 65, 81, 0.85);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.85);
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .summary-pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 0%, #4ade80, #16a34a);
+        box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
+      }
+
+      .summary-pill strong {
+        color: var(--text-main);
+        font-weight: 500;
+      }
+
+      main {
+        display: block;
+      }
+
+      .top-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .summary-card {
+        border-radius: var(--radius-lg);
+        padding: 10px 12px;
+        background:
+          radial-gradient(circle at top left, rgba(56, 189, 248, 0.25), transparent 55%),
+          linear-gradient(145deg, #020617, #020617);
+        border: 1px solid rgba(31, 41, 55, 0.95);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.85);
+        font-size: 0.8rem;
+      }
+
+      .summary-card h2 {
+        margin: 0 0 4px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: var(--text-soft);
+      }
+
+      .summary-card .value-main {
+        font-size: 1.15rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+
+      .summary-card .value-sub {
+        font-size: 0.78rem;
+        color: var(--text-soft);
+        margin-top: 3px;
+      }
+
+      .summary-card .value-main.pass {
+        color: #bbf7d0;
+      }
+
+      .summary-card .value-main.fail {
+        color: #fecaca;
+      }
+
+      .summary-card .chip {
+        display: inline-flex;
+        margin-top: 6px;
+        padding: 3px 7px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(148, 163, 184, 0.75);
+        font-size: 0.72rem;
+        color: var(--text-muted);
+      }
+
+      .summary-card .chip--ok {
+        border-color: rgba(34, 197, 94, 0.9);
+        color: #bbf7d0;
+      }
+
+      .summary-card .chip--warn {
+        border-color: rgba(234, 179, 8, 0.9);
+        color: #fef3c7;
+      }
+
+      .summary-card .chip--bad {
+        border-color: rgba(248, 113, 113, 0.9);
+        color: #fecaca;
+      }
+
+      .loading,
+      .error,
+      .empty {
+        margin-top: 32px;
+        font-size: 0.98rem;
+        color: var(--text-muted);
+      }
+
+      .error {
+        color: var(--danger);
+      }
+
+      .env-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 4px;
+      }
+
+      .env-card {
+        position: relative;
+        border-radius: var(--radius-lg);
+        padding: 14px 14px 16px;
+        background:
+          radial-gradient(circle at top left, rgba(56, 189, 248, 0.26), transparent 55%),
+          radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 1));
+        border: 1px solid rgba(31, 41, 55, 0.98);
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+      }
+
+      .env-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(
+            to bottom right,
+            rgba(15, 23, 42, 0.4),
+            transparent 30%,
+            transparent 65%,
+            rgba(15, 23, 42, 0.8)
+          );
+        opacity: 0.92;
+        pointer-events: none;
+      }
+
+      .env-card-inner {
+        position: relative;
+        z-index: 1;
+      }
+
+      .env-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .env-name {
+        font-size: 0.96rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .badge {
+        font-size: 0.76rem;
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        background: rgba(15, 23, 42, 0.98);
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .badge.pass-high {
+        border-color: var(--accent-strong);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(15, 23, 42, 0.97));
+        color: #bbf7d0;
+      }
+
+      .badge.pass-mid {
+        border-color: rgba(234, 179, 8, 0.9);
+        background: linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(15, 23, 42, 0.98));
+        color: #fef3c7;
+      }
+
+      .badge.pass-low {
+        border-color: rgba(248, 113, 113, 0.9);
+        background: linear-gradient(135deg, rgba(248, 113, 113, 0.2), rgba(15, 23, 42, 0.98));
+        color: #fecaca;
+      }
+
+      .stats {
+        margin: 10px 0 8px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+        font-size: 0.8rem;
+      }
+
+      .stats div {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .stats dt {
+        color: var(--text-soft);
+      }
+
+      .stats dd {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+      }
+
+      .meta {
+        margin: 6px 0 0;
+        font-size: 0.74rem;
+        color: var(--text-soft);
+        line-height: 1.4;
+      }
+
+      .meta span {
+        display: inline-block;
+      }
+
+      .links {
+        margin: 10px 0 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .links a {
+        font-size: 0.78rem;
+        color: var(--accent);
+        text-decoration: none;
+        border-radius: var(--radius-pill);
+        padding: 5px 11px;
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.23), rgba(15, 23, 42, 0.98));
+      }
+
+      .links a:hover {
+        border-color: rgba(56, 189, 248, 0.9);
+        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.3), rgba(15, 23, 42, 0.99));
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 0.8em;
+      }
+
+      @media (max-width: 720px) {
+        .top-summary {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        header {
+          align-items: flex-start;
+        }
+
+        .summary-pill {
+          width: 100%;
+          justify-content: space-between;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="title-block">
+          <h1>Playwright API Metrics</h1>
+          <p>Latest run per environment (security + functional)</p>
+        </div>
+        <div class="summary-pill">
+          <span class="dot"></span>
+          <span>Live from <code>site/metrics-latest.json</code></span>
+        </div>
+      </header>
+
+      <main id="app">
+        <p class="loading">Loading latest metrics…</p>
+      </main>
+    </div>
+
+    <script>
+      function classifyPassRate(rate) {
+        if (!Number.isFinite(rate)) return { label: "n/a", chipClass: "" };
+        if (rate >= 95) return { label: rate + "%", chipClass: "chip chip--ok" };
+        if (rate >= 85) return { label: rate + "%", chipClass: "chip chip--warn" };
+        return { label: rate + "%", chipClass: "chip chip--bad" };
+      }
+
+      async function loadMetrics() {
+        const app = document.getElementById("app");
+
+        try {
+          const res = await fetch("metrics-latest.json", { cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+
+          const data = await res.json();
+          const envNames = Object.keys(data || {}).sort();
+
+          if (!envNames.length) {
+            app.innerHTML = '<p class="empty">No metrics available yet.</p>';
+            return;
+          }
+
+          // ---- Global summary ----
+          let totalAll = 0;
+          let totalPassed = 0;
+          let lastTimestamp = null;
+          envNames.forEach((env) => {
+            const m = data[env] || {};
+            const t = m.totals || {};
+            const ts = m.timestampISO ? new Date(m.timestampISO) : null;
+
+            totalAll += Number(t.all || 0);
+            totalPassed += Number(t.passed || 0);
+
+            if (ts && (!lastTimestamp || ts > lastTimestamp)) {
+              lastTimestamp = ts;
+            }
+          });
+
+          const overallPassRate =
+            totalAll === 0 ? 0 : Math.round((totalPassed / Math.max(totalAll, 1)) * 100);
+          const lastUpdatedText = lastTimestamp
+            ? lastTimestamp.toLocaleString()
+            : "n/a";
+
+          const summaryWrapper = document.createElement("section");
+          summaryWrapper.className = "top-summary";
+
+          // Card 1 – Overall pass rate
+          const c1 = document.createElement("article");
+          c1.className = "summary-card";
+          const passClass = overallPassRate >= 95 ? "pass" : overallPassRate < 85 ? "fail" : "";
+          c1.innerHTML = `
+            <h2>Overall pass rate</h2>
+            <div class="value-main ${passClass}">${overallPassRate || 0}%</div>
+            <div class="value-sub">Across all environments</div>
+          `;
+          summaryWrapper.appendChild(c1);
+
+          // Card 2 – Total tests
+          const c2 = document.createElement("article");
+          c2.className = "summary-card";
+          c2.innerHTML = `
+            <h2>Total tests</h2>
+            <div class="value-main">${totalAll}</div>
+            <div class="value-sub">Passed: ${totalPassed}</div>
+          `;
+          summaryWrapper.appendChild(c2);
+
+          // Card 3 – Last updated
+          const c3 = document.createElement("article");
+          c3.className = "summary-card";
+          const passMeta = classifyPassRate(overallPassRate);
+          c3.innerHTML = `
+            <h2>Last updated</h2>
+            <div class="value-main">${lastUpdatedText}</div>
+            <div class="value-sub">Latest finished run in DEV/SIT/UAT</div>
+            ${
+              passMeta.chipClass
+                ? `<div class="${passMeta.chipClass}">Overall: ${passMeta.label} pass</div>`
+                : ""
+            }
+          `;
+          summaryWrapper.appendChild(c3);
+
+          // ---- Environment cards ----
+          const grid = document.createElement("div");
+          grid.className = "env-grid";
+
+          envNames.forEach((envName) => {
+            const m = data[envName] || {};
+            const t = m.totals || {};
+            const passRate = Number.isFinite(m.passRate) ? m.passRate : 0;
+            let badgeClass = "badge";
+            if (passRate >= 95) badgeClass += " pass-high";
+            else if (passRate >= 85) badgeClass += " pass-mid";
+            else badgeClass += " pass-low";
+
+            const runTime = m.timestampISO ? new Date(m.timestampISO).toLocaleString() : "n/a";
+
+            const card = document.createElement("article");
+            card.className = "env-card";
+            card.innerHTML = `
+              <div class="env-card-inner">
+                <header class="env-header">
+                  <div class="env-name">${m.env || envName}</div>
+                  <div class="${badgeClass}">${passRate || 0}% pass</div>
+                </header>
+
+                <dl class="stats">
+                  <div><dt>Total tests</dt><dd>${t.all ?? "–"}</dd></div>
+                  <div><dt>Security</dt><dd>${t.security ?? "–"}</dd></div>
+                  <div><dt>Functional</dt><dd>${t.functional ?? "–"}</dd></div>
+                  <div><dt>Passed</dt><dd>${t.passed ?? "–"}</dd></div>
+                  <div><dt>Failed</dt><dd>${t.failed ?? "–"}</dd></div>
+                </dl>
+
+                <p class="meta">
+                  <span>Run ID: ${m.runId || "unknown"}</span><br />
+                  <span>SHA: ${m.gitSha || "n/a"}</span><br />
+                  <span>Time: ${runTime}</span>
+                </p>
+
+                <div class="links">
+                  ${
+                    m.reportUrl
+                      ? `<a href="${m.reportUrl}" target="_blank" rel="noopener noreferrer">Open Playwright report</a>`
+                      : ""
+                  }
+                </div>
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+
+          app.innerHTML = "";
+          app.appendChild(summaryWrapper);
+          app.appendChild(grid);
+        } catch (err) {
+          console.error(err);
+          app.innerHTML =
+            '<p class="error">Failed to load metrics (' +
+            (err && err.message ? err.message : "unknown error") +
+            ").</p>";
+        }
+      }
+
+      loadMetrics();
+    </script>
+  </body>
+</html>
