@@ -1,6 +1,6 @@
 {
   "name": "@artshllaku/pw-metrics",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "dist/playwrightMetrics.js",
   "types": "dist/playwrightMetrics.d.ts",
@@ -20,7 +20,6 @@
     "dev:generate": "ts-node src/generateMetrics.ts",
     "dev:summary": "ts-node src/parseResults.ts"
   },
-
   "keywords": [
     "playwright",
     "metrics",
