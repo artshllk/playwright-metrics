@@ -40,80 +40,109 @@ Highlights
 
 ## Categories (optional)
 
-pw-metrics supports **custom test categories** to help you break down results in a way that matches your test strategy.
+pw-metrics supports custom test categories so you can break down results in a way that matches your test strategy. Categories are optional — if you don’t configure them the tool behaves exactly the same as without them.
 
-Categories are **fully user-defined**. The tool does not enforce any naming or meaning.  
-You decide what a category represents.
+You decide what a category means; the tool doesn't enforce naming or semantics.
 
-Common examples include:
+### Common examples
 
-- `smoke`
-- `regression`
-- `security`
-- `integration`
-- `mobile`
-- `api`
-- `performance`
+- smoke
+- regression
+- security
+- integration
+- api
+- mobile
+- performance
 
-### How categories work
+### How categories match tests
 
-A category groups tests based on **matching rules**. A test can belong to a category if it matches one or more of the following:
+A category groups tests using one or more matching rules. A test is included when any rule matches.
 
-- **Tags** (Playwright annotations)
-- **Project names**
-- **File path patterns**
+- Tags — Playwright annotations (for example `@smoke`).
+- Project names — the Playwright project identifier.
+- File path patterns — glob-like patterns against the test file path.
 
-Categories are evaluated **after** test results are loaded and filtered.
+### Modes
 
-### Multiple vs exclusive categories
+Control how tests are assigned:
 
-You can choose how categories behave:
+- Multi-category (default) — a test may belong to multiple categories (example: `api` + `security`).
+- Exclusive — a test is counted only in the first matching category (useful for mutually-exclusive groups like `smoke` or `regression`).
 
-- **Multi-category mode**  
-  A test may belong to multiple categories at the same time.
+### What metrics are produced
 
-- **Exclusive mode**  
-  A test is counted only in the first matching category.
+- Global totals (`all`, `passed`, `failed`, `skipped`, `timedOut`) are always computed.
+- When categories are configured, pw-metrics adds a `categories` breakdown.
 
-This allows you to model both overlapping concerns (for example `api` + `security`)
-and strict groupings (for example `smoke` _or_ `regression`).
+Each category contains:
 
-### How categories affect metrics
+- `total`
+- `passed`
+- `failed`
+- `skipped`
+- `timedOut`
+- `passRate` (percentage)
 
-- Global totals (`all`, `passed`, `failed`, etc.) are **always computed**
-- Categories provide an **additional breakdown**
-- Each category has its own:
-  - total count
-  - passed / failed / skipped / timed out
-  - pass rate
+If categories are not configured, the `categories` section is omitted.
 
-If categories are not configured, pw-metrics behaves exactly the same as without them.
+### Example output (with categories)
 
-### Where category results appear
-
-When categories are enabled, the output includes an additional section:
-
-````json
+```json
 {
+  "totals": {
+    "all": 30,
+    "passed": 27,
+    "failed": 2,
+    "skipped": 1,
+    "timedOut": 0
+  },
+  "passRate": 90,
   "categories": {
     "smoke": {
-      "total": 20,
-      "passed": 19,
+      "total": 10,
+      "passed": 9,
       "failed": 1,
       "skipped": 0,
       "timedOut": 0,
-      "passRate": 95
+      "passRate": 90
     },
     "security": {
-      "total": 10,
-      "passed": 8,
-      "failed": 2,
+      "total": 5,
+      "passed": 4,
+      "failed": 1,
       "skipped": 0,
       "timedOut": 0,
       "passRate": 80
     }
   }
 }
+```
+
+### Example configuration
+
+Create a `pw-metrics.config.json` at the repo root (CLI args always override config values):
+
+```json
+{
+  "categories": [
+    {
+      "name": "smoke",
+      "tags": ["@smoke"]
+    },
+    {
+      "name": "security",
+      "tags": ["@security"],
+      "projectPatterns": ["security"]
+    }
+  ],
+  "categoryMode": "multi"
+}
+```
+
+Notes:
+
+- Use `categoryMode: "exclusive"` to enable exclusive assignment.
+- Tags, `projectPatterns` and path matching are additive — a test matches the category when any rule matches.
 
 ## Requirements
 
@@ -126,7 +155,7 @@ Example test run that writes a Playwright JSON report:
 ```bash
 npx playwright test --reporter=json
 # Common locations: test-results/results.json, playwright-report or a CI-provided path
-````
+```
 
 ## Installation
 
