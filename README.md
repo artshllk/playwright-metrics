@@ -283,7 +283,3 @@ Open the file in VS Code and press `Cmd+Shift+V` (macOS) or `Ctrl+Shift+V` (Wind
 ## License
 
 MIT — Art Shllaku
-
----
-
-If you'd like a slightly different tone (shorter, more technical, or more marketing-forward) or want additional visuals (screenshots, badges for CI status, npm downloads), tell me which direction and I will update this README accordingly.

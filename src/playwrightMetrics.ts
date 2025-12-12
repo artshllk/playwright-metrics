@@ -49,7 +49,6 @@ export interface CategoryMetrics {
   passRate: number;
 }
 
-// extended metrics summary
 export interface MetricsSummary {
   env: string;
   totals: MetricsTotals;
@@ -57,7 +56,6 @@ export interface MetricsSummary {
   categories?: Record<string, CategoryMetrics>;
 }
 
-// SINGLE ParseOptions – no duplicate
 export interface ParseOptions {
   jsonPath: string;
   environmentName: string;
