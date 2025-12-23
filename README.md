@@ -8,7 +8,9 @@ Playwright test metrics generator for local runs and CI pipelines.
 
 pw-metrics reads a Playwright JSON report and emits small, consumable JSON metrics you can feed to dashboards, posting tools, or CI summaries.
 
-Highlights
+It is designed for teams and individuals who want simple visibility into Playwright test results without building a custom reporting system.
+
+## Highlights
 
 - Per-run `metrics.json` with totals and run metadata
 - A consolidated `metrics-latest.json` suitable for dashboards
@@ -40,6 +42,8 @@ Highlights
 
 ## Categories (optional)
 
+This feature is optional and disabled by default. If you do nothing, pw-metrics behaves exactly like earlier versions.
+
 pw-metrics supports custom test categories so you can break down results in a way that matches your test strategy. Categories are optional — if you don’t configure them the tool behaves exactly the same as without them.
 
 You decide what a category means; the tool doesn't enforce naming or semantics.
@@ -60,7 +64,7 @@ A category groups tests using one or more matching rules. A test is included whe
 
 - Tags — Playwright annotations (for example `@smoke`).
 - Project names — the Playwright project identifier.
-- File path patterns — glob-like patterns against the test file path.
+- File path patterns — regular expressions matched against the test file path.
 
 ### Modes
 
@@ -85,7 +89,7 @@ Each category contains:
 
 If categories are not configured, the `categories` section is omitted.
 
-### Example output (with categories)
+### Example output (categories section only)
 
 ```json
 {
@@ -121,6 +125,8 @@ If categories are not configured, the `categories` section is omitted.
 ### Example configuration
 
 Create a `pw-metrics.config.json` at the repo root (CLI args always override config values):
+
+This file is optional. It is useful when you want consistent behavior across local runs and CI.
 
 ```json
 {
@@ -270,7 +276,7 @@ jobs:
 
 ## Configuration
 
-You can optionally create a `pw-metrics.config.json` at the repo root to set defaults (env, paths, custom categories). CLI options take precedence over config values.
+You can optionally create a `pw-metrics.config.json` at the repo root to define default values such as environment, output paths, and categories. CLI options take precedence over config values.
 
 ## Contributing
 
