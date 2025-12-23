@@ -23,8 +23,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev:generate": "ts-node src/generateMetrics.ts",
-    "dev:summary": "ts-node src/parseResults.ts",
+    "dev:generate": "npm run build && node dist/generateMetrics.js",
+    "dev:summary": "npm run build && node dist/parseResults.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
